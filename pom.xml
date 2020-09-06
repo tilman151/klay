@@ -15,6 +15,7 @@
         <kotlin.version>1.4.0</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <junit.version>4.12</junit.version>
+        <dl4j-master.version>1.0.0-beta7</dl4j-master.version>
     </properties>
 
     <dependencies>
@@ -38,12 +39,17 @@
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-core</artifactId>
-            <version>1.0.0-beta6</version>
+            <version>${dl4j-master.version}</version>
         </dependency>
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-native-platform</artifactId>
-            <version>1.0.0-beta6</version>
+            <version>${dl4j-master.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-common</artifactId>
+            <version>${dl4j-master.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
