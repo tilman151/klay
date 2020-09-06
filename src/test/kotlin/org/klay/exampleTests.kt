@@ -20,6 +20,64 @@ import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
 class ExampleTests {
     @Test
+    fun mnistSingleLayerExample() {
+        val numRows = 28
+        val numColumns = 28
+        val outputNum = 10
+        val rngSeed = 123
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(rngSeed.toLong()) //include a random seed for reproducibility
+            // use stochastic gradient descent as an optimization algorithm
+            .updater(Nesterovs(0.006, 0.9))
+            .l2(1e-4)
+            .list()
+            .layer(
+                DenseLayer.Builder() //create the first, input layer with xavier initialization
+                    .nIn(numRows * numColumns)
+                    .nOut(1000)
+                    .activation(Activation.RELU)
+                    .weightInit(WeightInit.XAVIER)
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD) //create hidden layer
+                    .nIn(1000)
+                    .nOut(outputNum)
+                    .activation(Activation.SOFTMAX)
+                    .weightInit(WeightInit.XAVIER)
+                    .build()
+            )
+            .build()
+        val dl4jString = dl4jNet.toString()
+
+        val klayNet = sequential {
+            seed(rngSeed.toLong()) //include a random seed for reproducibility
+            // use stochastic gradient descent as an optimization algorithm
+            updater(Nesterovs(0.006, 0.9))
+            l2(1e-4)
+            layers {
+                dense {
+                    nIn(numRows * numColumns)
+                    nOut(1000)
+                    activation(Activation.RELU)
+                    weightInit(WeightInit.XAVIER)
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    nIn(1000)
+                    nOut(outputNum)
+                    activation(Activation.SOFTMAX)
+                    weightInit(WeightInit.XAVIER)
+                }
+            }
+        }
+        val klayString = klayNet.toString()
+
+        assertEquals(dl4jString, klayString)
+    }
+
+    @Test
     fun mnistDoubleLayerExample() {
         val numRows = 28
         val numColumns = 28
