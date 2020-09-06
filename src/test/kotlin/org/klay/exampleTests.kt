@@ -2,6 +2,7 @@ package org.klay
 
 import junit.framework.TestCase.assertEquals
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
+import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
 import org.deeplearning4j.nn.weights.WeightInit
@@ -241,6 +242,65 @@ class ExampleTests {
                     activation(Activation.SOFTMAX)
                     nIn(numHiddenNodes)
                     nOut(numOutputs)
+                }
+            }
+        }
+        val klayString = klayNet.toString()
+
+        assertEquals(dl4jString, klayString)
+    }
+
+    @Test
+    fun modelXORExample() {
+        val seed = 1234
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .updater(Sgd(0.1))
+            .seed(seed.toLong())
+            .biasInit(0.0) // init the bias with 0 - empirical value, too
+            // The networks can process the input more quickly and more accurately by ingesting
+            // minibatches 5-10 elements at a time in parallel.
+            // This example runs better without, because the dataset is smaller than the mini batch size
+            .miniBatch(false)
+            .list()
+            .layer(
+                DenseLayer.Builder()
+                    .nIn(2)
+                    .nOut(4)
+                    .activation(Activation.SIGMOID) // random initialize weights with values between 0 and 1
+                    .weightInit(UniformDistribution(0.0, 1.0))
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .nOut(2)
+                    .activation(Activation.SOFTMAX)
+                    .weightInit(UniformDistribution(0.0, 1.0))
+                    .build()
+            )
+            .build()
+        val dl4jString = dl4jNet.toString()
+
+        val klayNet = sequential {
+            updater(Sgd(0.1))
+            seed(seed.toLong())
+            biasInit(0.0) // init the bias with 0 - empirical value, too
+            // The networks can process the input more quickly and more accurately by ingesting
+            // minibatches 5-10 elements at a time in parallel.
+            // This example runs better without, because the dataset is smaller than the mini batch size
+            miniBatch(false)
+            layers {
+                dense {
+                    nIn(2)
+                    nOut(4)
+                    activation(Activation.SIGMOID) // random initialize weights with values between 0 and 1
+                    weightInit(UniformDistribution(0.0, 1.0))
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    nOut(2)
+                    activation(Activation.SOFTMAX)
+                    weightInit(UniformDistribution(0.0, 1.0))
                 }
             }
         }
