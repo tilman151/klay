@@ -308,4 +308,55 @@ class ExampleTests {
 
         assertEquals(dl4jString, klayString)
     }
+
+    @Test
+    fun moonClassifierExample() {
+        val seed = 123
+        val learningRate = 0.005
+        val numInputs = 2
+        val numOutputs = 2
+        val numHiddenNodes = 50
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .weightInit(WeightInit.XAVIER)
+            .updater(Nesterovs(learningRate, 0.9))
+            .list()
+            .layer(
+                DenseLayer.Builder().nIn(numInputs).nOut(numHiddenNodes)
+                    .activation(Activation.RELU)
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .weightInit(WeightInit.XAVIER)
+                    .activation(Activation.SOFTMAX)
+                    .nIn(numHiddenNodes).nOut(numOutputs).build()
+            )
+            .build()
+        val dl4jString = dl4jNet.toString()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            weightInit(WeightInit.XAVIER)
+            updater(Nesterovs(learningRate, 0.9))
+            layers {
+                dense {
+                    nIn(numInputs)
+                    nOut(numHiddenNodes)
+                    activation(Activation.RELU)
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    weightInit(WeightInit.XAVIER)
+                    activation(Activation.SOFTMAX)
+                    nIn(numHiddenNodes)
+                    nOut(numOutputs)
+                }
+            }
+        }
+        val klayString = klayNet.toString()
+
+        assertEquals(dl4jString, klayString)
+    }
 }
