@@ -12,7 +12,9 @@ import org.klay.nn.output
 import org.klay.nn.sequential
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.Nadam
+import org.nd4j.linalg.learning.config.Nesterovs
 import org.nd4j.linalg.learning.config.Sgd
+import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
 
@@ -132,6 +134,55 @@ class ExampleTests {
                     activation(Activation.SOFTMAX)
                     nIn(3)
                     nOut(outputNum)
+                }
+            }
+        }
+        val klayString = klayNet.toString()
+
+        assertEquals(dl4jString, klayString)
+    }
+
+    @Test
+    fun linearDataClassifierExample() {
+        val seed = 123
+        val learningRate = 0.01
+        val numInputs = 2
+        val numOutputs = 2
+        val numHiddenNodes = 20
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .weightInit(WeightInit.XAVIER)
+            .updater(Nesterovs(learningRate, 0.9))
+            .list()
+            .layer(
+                DenseLayer.Builder().nIn(numInputs).nOut(numHiddenNodes)
+                    .activation(Activation.RELU)
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .activation(Activation.SOFTMAX)
+                    .nIn(numHiddenNodes).nOut(numOutputs).build()
+            )
+            .build()
+        val dl4jString = dl4jNet.toString()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            weightInit(WeightInit.XAVIER)
+            updater(Nesterovs(learningRate, 0.9))
+            layers {
+                dense {
+                    activation(Activation.RELU)
+                    nIn(numInputs)
+                    nOut(numHiddenNodes)
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    activation(Activation.SOFTMAX)
+                    nIn(numHiddenNodes)
+                    nOut(numOutputs)
                 }
             }
         }
