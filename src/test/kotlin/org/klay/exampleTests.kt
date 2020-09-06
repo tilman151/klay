@@ -12,7 +12,7 @@ import org.klay.nn.output
 import org.klay.nn.sequential
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.Nadam
-import org.nd4j.linalg.learning.config.Nesterovs
+import org.nd4j.linalg.learning.config.Sgd
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
 
@@ -81,6 +81,62 @@ class ExampleTests {
         val klayString = klayNet.toString()
 
         assertEquals(dl4jString, klayString)
+    }
 
+    @Test
+    fun irisClassifierExample() {
+        val numInputs = 4
+        val outputNum = 3
+        val seed: Long = 6
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed)
+            .activation(Activation.TANH)
+            .weightInit(WeightInit.XAVIER)
+            .updater(Sgd(0.1))
+            .l2(1e-4)
+            .list()
+            .layer(
+                DenseLayer.Builder().nIn(numInputs).nOut(3)
+                    .build()
+            )
+            .layer(
+                DenseLayer.Builder().nIn(3).nOut(3)
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .activation(Activation.SOFTMAX) //Override the global TANH activation with softmax for this layer
+                    .nIn(3).nOut(outputNum).build()
+            )
+            .build()
+        val dl4jString = dl4jNet.toString()
+
+        val klayNet = sequential {
+            seed(seed)
+            activation(Activation.TANH)
+            weightInit(WeightInit.XAVIER)
+            updater(Sgd(0.1))
+            l2(1e-4)
+            layers {
+                dense {
+                    nIn(numInputs)
+                    nOut(3)
+                }
+                dense {
+                    nIn(3)
+                    nOut(3)
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    activation(Activation.SOFTMAX)
+                    nIn(3)
+                    nOut(outputNum)
+                }
+            }
+        }
+        val klayString = klayNet.toString()
+
+        assertEquals(dl4jString, klayString)
     }
 }
