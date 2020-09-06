@@ -1,4 +1,4 @@
-package org.klay.examples
+package org.klay.examples.classification
 
 import org.datavec.api.records.reader.RecordReader
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader
