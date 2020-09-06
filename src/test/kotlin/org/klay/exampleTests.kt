@@ -1,6 +1,7 @@
 package org.klay
 
 import junit.framework.TestCase.assertEquals
+import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.layers.DenseLayer
@@ -15,7 +16,6 @@ import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.Nadam
 import org.nd4j.linalg.learning.config.Nesterovs
 import org.nd4j.linalg.learning.config.Sgd
-import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
 
@@ -50,7 +50,6 @@ class ExampleTests {
                     .build()
             )
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(rngSeed.toLong()) //include a random seed for reproducibility
@@ -73,9 +72,8 @@ class ExampleTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -112,7 +110,6 @@ class ExampleTests {
                     .build()
             )
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(rngSeed.toLong()) //include a random seed for reproducibility
@@ -139,9 +136,8 @@ class ExampleTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -171,7 +167,6 @@ class ExampleTests {
                     .nIn(3).nOut(outputNum).build()
             )
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(seed)
@@ -196,9 +191,8 @@ class ExampleTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -225,7 +219,6 @@ class ExampleTests {
                     .nIn(numHiddenNodes).nOut(numOutputs).build()
             )
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(seed.toLong())
@@ -245,9 +238,8 @@ class ExampleTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -279,7 +271,6 @@ class ExampleTests {
                     .build()
             )
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             updater(Sgd(0.1))
@@ -304,9 +295,8 @@ class ExampleTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -334,7 +324,6 @@ class ExampleTests {
                     .nIn(numHiddenNodes).nOut(numOutputs).build()
             )
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(seed.toLong())
@@ -355,8 +344,59 @@ class ExampleTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun csvDataModelExample() {
+        val seed = 12345
+        val learningRate = 0.00001
+        val numInputs = 1
+        val numOutputs = 1
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .weightInit(WeightInit.XAVIER)
+            .updater(Nesterovs(learningRate, 0.9))
+            .list()
+            .layer(
+                DenseLayer.Builder().nIn(numInputs).nOut(numOutputs)
+                    .activation(Activation.IDENTITY)
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.MSE)
+                    .activation(Activation.IDENTITY)
+                    .nIn(numOutputs).nOut(numOutputs).build()
+            )
+            .build()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            weightInit(WeightInit.XAVIER)
+            updater(Nesterovs(learningRate, 0.9))
+            layers {
+                dense {
+                    nIn(numInputs)
+                    nOut(numOutputs)
+                    activation(Activation.IDENTITY)
+                }
+                output {
+                    lossFunction(LossFunction.MSE)
+                    activation(Activation.IDENTITY)
+                    nIn(numOutputs)
+                    nOut(numOutputs)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    private fun assertNetsEquals(dl4jNet: MultiLayerConfiguration, klayNet: MultiLayerConfiguration) {
+        val dl4jString = dl4jNet.toString()
+        val klayString = klayNet.toString()
         assertEquals(dl4jString, klayString)
     }
 }
