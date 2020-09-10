@@ -6,8 +6,10 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
+import org.klay.examples.regression.SumModel
 import org.klay.nn.dense
 import org.klay.nn.layers
 import org.klay.nn.output
@@ -434,6 +436,49 @@ class ExampleTests {
                     lossFunction(LossFunction.MSE)
                     activation(Activation.IDENTITY)
                     nIn(numHiddenNodes)
+                    nOut(numOutputs)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun sumModelExample() {
+        val seed = 12345
+        val numInput = 2
+        val numOutputs = 1
+        val nHidden = 10
+        val learningRate = 0.01
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .weightInit(WeightInit.XAVIER)
+            .updater(Nesterovs(learningRate, 0.9))
+            .list()
+            .layer(0, DenseLayer.Builder().nIn(numInput).nOut(nHidden)
+                    .activation(Activation.TANH) //Change this to RELU and you will see the net learns very well very quickly
+                    .build())
+            .layer(1, OutputLayer.Builder(LossFunction.MSE)
+                    .activation(Activation.IDENTITY)
+                    .nIn(nHidden).nOut(numOutputs).build())
+            .build()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            weightInit(WeightInit.XAVIER)
+            updater(Nesterovs(learningRate, 0.9))
+            layers {
+                dense {
+                    nIn(numInput)
+                    nOut(nHidden)
+                    activation(Activation.TANH) //Change this to RELU and you will see the net learns very well very quickly
+                }
+                output {
+                    lossFunction(LossFunction.MSE)
+                    activation(Activation.IDENTITY)
+                    nIn(nHidden)
                     nOut(numOutputs)
                 }
             }
