@@ -394,6 +394,54 @@ class ExampleTests {
         assertNetsEquals(dl4jNet, klayNet)
     }
 
+    @Test
+    fun mathFunctionsModelExample() {
+        val learningRate = 0.01
+        val seed = 12345
+        val numInputs = 1
+        val numOutputs = 1
+        val numHiddenNodes = 50
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+                .seed(seed.toLong())
+                .weightInit(WeightInit.XAVIER)
+                .updater(Nesterovs(learningRate, 0.9))
+                .list()
+                .layer(DenseLayer.Builder().nIn(numInputs).nOut(numHiddenNodes)
+                        .activation(Activation.TANH).build())
+                .layer(DenseLayer.Builder().nIn(numHiddenNodes).nOut(numHiddenNodes)
+                        .activation(Activation.TANH).build())
+                .layer(OutputLayer.Builder(LossFunction.MSE)
+                        .activation(Activation.IDENTITY)
+                        .nIn(numHiddenNodes).nOut(numOutputs).build())
+                .build()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            weightInit(WeightInit.XAVIER)
+            activation(Activation.TANH)
+            updater(Nesterovs(learningRate, 0.9))
+            layers {
+                dense {
+                    nIn(numInputs)
+                    nOut(numHiddenNodes)
+                }
+                dense {
+                    nIn(numHiddenNodes)
+                    nOut(numHiddenNodes)
+                }
+                output {
+                    lossFunction(LossFunction.MSE)
+                    activation(Activation.IDENTITY)
+                    nIn(numHiddenNodes)
+                    nOut(numOutputs)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
     private fun assertNetsEquals(dl4jNet: MultiLayerConfiguration, klayNet: MultiLayerConfiguration) {
         val dl4jString = dl4jNet.toString()
         val klayString = klayNet.toString()
