@@ -6,15 +6,14 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
-import org.klay.examples.regression.SumModel
 import org.klay.nn.dense
 import org.klay.nn.layers
 import org.klay.nn.output
 import org.klay.nn.sequential
 import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.learning.config.AdaGrad
 import org.nd4j.linalg.learning.config.Nadam
 import org.nd4j.linalg.learning.config.Nesterovs
 import org.nd4j.linalg.learning.config.Sgd
@@ -480,6 +479,52 @@ class ExampleTests {
                     activation(Activation.IDENTITY)
                     nIn(nHidden)
                     nOut(numOutputs)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun mnistAutoencoderExample() {
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(12345)
+            .weightInit(WeightInit.XAVIER)
+            .updater(AdaGrad(0.05))
+            .activation(Activation.RELU)
+            .l2(0.0001)
+            .list()
+            .layer(DenseLayer.Builder().nIn(784).nOut(250)
+                    .build())
+            .layer(DenseLayer.Builder().nIn(250).nOut(10)
+                    .build())
+            .layer(DenseLayer.Builder().nIn(10).nOut(250)
+                    .build())
+            .layer(OutputLayer.Builder().nIn(250).nOut(784)
+                    .lossFunction(LossFunction.MSE)
+                    .build())
+            .build()
+
+        val hiddenUnits = listOf(784, 250, 10, 250)
+        val outputUnits = 784
+        val klayNet = sequential {
+            seed(12345)
+            weightInit(WeightInit.XAVIER)
+            updater(AdaGrad(0.05))
+            activation(Activation.RELU)
+            l2(0.0001)
+            layers {
+                for (u in hiddenUnits.zipWithNext()) { // Dynamically generate layers from units list
+                    dense {
+                        nIn(u.first)
+                        nOut(u.second)
+                    }
+                }
+                output {
+                    lossFunction(LossFunction.MSE)
+                    nIn(hiddenUnits.last())
+                    nOut(outputUnits)
                 }
             }
         }
