@@ -16,6 +16,8 @@ import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.*
 import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
+import org.nd4j.linalg.schedule.MapSchedule
+import org.nd4j.linalg.schedule.ScheduleType
 
 
 class ExampleTests {
@@ -864,6 +866,118 @@ class ExampleTests {
                     kernelSize(5, 5)
                     stride(1, 1)
                     nIn(nChannels)
+                    nOut(20)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                }
+                conv2d {
+                    activation(Activation.IDENTITY)
+                    kernelSize(5, 5)
+                    stride(1, 1)
+                    nOut(50)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                }
+                dense {
+                    activation(Activation.RELU)
+                    nOut(500)
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    nOut(outputNum)
+                    activation(Activation.SOFTMAX)
+                }
+                inputType = InputType.convolutionalFlat(28, 28, 1)
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun leNetMNISTReLuExample() {
+        val height = 28L
+        val width = 28L
+        val channels = 1L
+        val outputNum = 10
+        val seed = 123
+        val learningRateSchedule: MutableMap<Int, Double> = HashMap()
+        learningRateSchedule[0] = 0.06
+        learningRateSchedule[200] = 0.05
+        learningRateSchedule[600] = 0.028
+        learningRateSchedule[800] = 0.0060
+        learningRateSchedule[1000] = 0.001
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .l2(0.0005) // ridge regression value
+            .updater(Nesterovs(MapSchedule(ScheduleType.ITERATION, learningRateSchedule)))
+            .weightInit(WeightInit.XAVIER)
+            .list()
+            .layer(
+                ConvolutionLayer.Builder(5, 5)
+                    .nIn(channels)
+                    .stride(1, 1)
+                    .nOut(20)
+                    .activation(Activation.IDENTITY)
+                    .build()
+            )
+            .layer(
+                SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build()
+            )
+            .layer(
+                ConvolutionLayer.Builder(5, 5)
+                    .stride(1, 1) // nIn need not specified in later layers
+                    .nOut(50)
+                    .activation(Activation.IDENTITY)
+                    .build()
+            )
+            .layer(
+                SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build()
+            )
+            .layer(
+                DenseLayer.Builder().activation(Activation.RELU)
+                    .nOut(500)
+                    .build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .nOut(outputNum)
+                    .activation(Activation.SOFTMAX)
+                    .build()
+            )
+            .setInputType(
+                InputType.convolutionalFlat(
+                    height,
+                    width,
+                    channels
+                )
+            ) // InputType.convolutional for normal image
+            .build()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            l2(0.0005)
+            weightInit(WeightInit.XAVIER)
+            updater(Nesterovs(MapSchedule(ScheduleType.ITERATION, learningRateSchedule)))
+            layers {
+                conv2d {
+                    activation(Activation.IDENTITY)
+                    kernelSize(5, 5)
+                    stride(1, 1)
+                    nIn(channels)
                     nOut(20)
                 }
                 subsampling {
