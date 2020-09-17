@@ -92,7 +92,7 @@ object CenterLossLeNetMNIST {
                 }
                 centerLossOutput {
                     lossFunction(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-                    nIn(2).nOut(outputNum)
+                    nOut(outputNum)
                     weightInit(WeightInit.XAVIER)
                     activation(Activation.SOFTMAX) //Alpha and lambda hyperparameters are specific to center loss model: see comments above and paper
                     alpha(alpha)
