@@ -5,16 +5,11 @@ package org.klay.examples.convolution
 
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator
 import org.klay.examples.utils.VAEPlotUtil
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.inputs.InputType
-import org.deeplearning4j.nn.conf.layers.CenterLossOutputLayer
-import org.deeplearning4j.nn.conf.layers.ConvolutionLayer
-import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
-import org.klay.nn.*
 import org.nd4j.common.primitives.Pair
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -23,6 +18,7 @@ import org.nd4j.linalg.learning.config.Adam
 import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.slf4j.LoggerFactory
 import java.util.*
+import org.klay.nn.*
 
 
 /**
