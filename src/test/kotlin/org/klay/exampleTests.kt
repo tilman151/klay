@@ -708,6 +708,96 @@ class ExampleTests {
         assertNetsEquals(dl4jNet, klayNet)
     }
 
+    @Test
+    fun centerLossLeNetMNISTExample() {
+        val outputNum = 10
+        val seed = 123
+        val lambda = 1.0
+        val alpha = 0.1
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .l2(0.0005)
+            .activation(Activation.LEAKYRELU)
+            .weightInit(WeightInit.RELU)
+            .updater(Adam(0.01))
+            .list()
+            .layer(ConvolutionLayer.Builder(5, 5).stride(1, 1).nOut(32).activation(Activation.LEAKYRELU).build())
+            .layer(SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).stride(2, 2).build())
+            .layer(ConvolutionLayer.Builder(5, 5).stride(1, 1).nOut(64).build())
+            .layer(SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).stride(2, 2).build())
+            .layer(
+                DenseLayer.Builder().nOut(256).build()
+            ) //Layer 5 is our embedding layer: 2 dimensions, just so we can plot it on X/Y grid. Usually use more in practice
+            .layer(
+                DenseLayer.Builder().activation(Activation.IDENTITY).weightInit(WeightInit.XAVIER)
+                    .nOut(2) //Larger L2 value on the embedding layer: can help to stop the embedding layer weights
+                    // (and hence activations) from getting too large. This is especially problematic with small values of
+                    // lambda such as 0.0
+                    .l2(0.1).build()
+            )
+            .layer(
+                CenterLossOutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .nIn(2).nOut(outputNum)
+                    .weightInit(WeightInit.XAVIER)
+                    .activation(Activation.SOFTMAX) //Alpha and lambda hyperparameters are specific to center loss model: see comments above and paper
+                    .alpha(alpha).lambda(lambda)
+                    .build()
+            )
+            .setInputType(InputType.convolutionalFlat(28, 28, 1))
+            .build()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            l2(0.0005)
+            activation(Activation.LEAKYRELU)
+            weightInit(WeightInit.RELU)
+            updater(Adam(0.01))
+            layers {
+                conv2d {
+                    kernelSize(5, 5)
+                    stride(1, 1)
+                    nOut(32)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                }
+                conv2d {
+                    kernelSize(5, 5)
+                    stride(1, 1)
+                    nOut(64)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                }
+                dense {
+                    nOut(256)
+                }
+                dense {
+                    activation(Activation.IDENTITY)
+                    weightInit(WeightInit.XAVIER)
+                    nOut(2)
+                    l2(0.1)
+                }
+                centerLossOutput {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    nIn(2).nOut(outputNum)
+                    weightInit(WeightInit.XAVIER)
+                    activation(Activation.SOFTMAX) //Alpha and lambda hyperparameters are specific to center loss model: see comments above and paper
+                    alpha(alpha)
+                    lambda(lambda)
+                }
+                inputType = InputType.convolutionalFlat(28, 28, 1)
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
     private fun assertNetsEquals(dl4jNet: MultiLayerConfiguration, klayNet: MultiLayerConfiguration) {
         val dl4jString = dl4jNet.toString()
         val klayString = klayNet.toString()
