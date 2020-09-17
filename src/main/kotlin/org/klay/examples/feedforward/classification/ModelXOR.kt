@@ -1,7 +1,7 @@
 /** Adapted from https://github.com/eclipse/deeplearning4j-examples/blob/master/dl4j-examples/src/main/java/org/
  * deeplearning4j/examples/quickstart/modeling/feedforward/classification/ModelXOR.java **/
 
-package org.klay.examples.classification
+package org.klay.examples.feedforward.classification
 
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork

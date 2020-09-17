@@ -1,7 +1,7 @@
 /** Adapted from https://github.com/eclipse/deeplearning4j-examples/blob/master/dl4j-examples/src/main/java/org/
  * deeplearning4j/examples/quickstart/modeling/feedforward/unsupervised/MNISTAutoencoder.java **/
 
-package org.klay.examples.unsupervised
+package org.klay.examples.feedforward.unsupervised
 
 import org.apache.commons.lang3.tuple.ImmutablePair
 import org.apache.commons.lang3.tuple.Pair

@@ -1,7 +1,7 @@
 /** Adapted from https://github.com/eclipse/deeplearning4j-examples/blob/master/dl4j-examples/src/main/java/org/
  * deeplearning4j/examples/quickstart/modeling/feedforward/regression/MathFunctionsModel.java **/
 
-package org.klay.examples.regression
+package org.klay.examples.feedforward.regression
 
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
