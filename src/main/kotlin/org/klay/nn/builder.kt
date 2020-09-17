@@ -20,6 +20,14 @@ fun NeuralNetConfiguration.ListBuilder.conv2d(init: ConvolutionLayer.Builder.() 
     this.layer(ConvolutionLayer.Builder().apply(init).build())
 }
 
+fun NeuralNetConfiguration.ListBuilder.batchNorm(init: BatchNormalization.Builder.() -> Unit) {
+    this.layer(BatchNormalization.Builder().apply(init).build())
+}
+
+fun NeuralNetConfiguration.ListBuilder.subsampling(init: SubsamplingLayer.Builder.() -> Unit) {
+    this.layer(SubsamplingLayer.Builder().apply(init).build())
+}
+
 fun NeuralNetConfiguration.ListBuilder.output(init: OutputLayer.Builder.() -> Unit) {
     this.layer(OutputLayer.Builder().apply(init).build())
 }
