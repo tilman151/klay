@@ -28,7 +28,6 @@ class LayerTests {
                 .activation(Activation.SOFTMAX)
                 .build())
             .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(42)
@@ -45,9 +44,8 @@ class LayerTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -67,7 +65,6 @@ class LayerTests {
                         .activation(Activation.SOFTMAX)
                         .build())
                 .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(42)
@@ -85,9 +82,97 @@ class LayerTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
-        assertEquals(dl4jString, klayString)
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun testSubsamplingLayer() {
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(42)
+            .updater(Adam())
+            .list()
+            .layer(ConvolutionLayer.Builder()
+                .nIn(10)
+                .nOut(100)
+                .kernelSize(3, 3)
+                .activation(Activation.RELU)
+                .build())
+            .layer(SubsamplingLayer.Builder()
+                .kernelSize(2, 2)
+                .stride(2, 2)
+                .poolingType(SubsamplingLayer.PoolingType.MAX)
+                .build()
+            )
+            .layer(OutputLayer.Builder()
+                .nOut(2)
+                .activation(Activation.SOFTMAX)
+                .build())
+            .build()
+
+        val klayNet = sequential {
+            seed(42)
+            updater(Adam())
+            layers {
+                conv2d {
+                    nIn(10)
+                    nOut(100)
+                    kernelSize(3, 3)
+                    activation(Activation.RELU)
+                }
+                subsampling {
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                }
+                output {
+                    nOut(2)
+                    activation(Activation.SOFTMAX)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun testBatchNormLayer() {
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(42)
+            .updater(Adam())
+            .list()
+            .layer(ConvolutionLayer.Builder()
+                .nIn(10)
+                .nOut(100)
+                .kernelSize(3, 3)
+                .activation(Activation.RELU)
+                .build())
+            .layer(BatchNormalization.Builder().build())
+            .layer(OutputLayer.Builder()
+                .nOut(2)
+                .activation(Activation.SOFTMAX)
+                .build())
+            .build()
+
+        val klayNet = sequential {
+            seed(42)
+            updater(Adam())
+            layers {
+                conv2d {
+                    nIn(10)
+                    nOut(100)
+                    kernelSize(3, 3)
+                    activation(Activation.RELU)
+                }
+                batchNorm {  }
+                output {
+                    nOut(2)
+                    activation(Activation.SOFTMAX)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
     }
 
     @Test
@@ -125,7 +210,6 @@ class LayerTests {
                 .nOut(outputNum)
                 .build())
                 .build()
-        val dl4jString = dl4jNet.toString()
 
         val klayNet = sequential {
             seed(rngSeed.toLong())
@@ -152,8 +236,13 @@ class LayerTests {
                 }
             }
         }
-        val klayString = klayNet.toString()
 
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    private fun assertNetsEquals(dl4jNet: MultiLayerConfiguration, klayNet: MultiLayerConfiguration) {
+        val dl4jString = dl4jNet.toString()
+        val klayString = klayNet.toString()
         assertEquals(dl4jString, klayString)
     }
 
