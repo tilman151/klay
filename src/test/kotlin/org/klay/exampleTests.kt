@@ -11,6 +11,7 @@ import org.deeplearning4j.nn.conf.layers.*
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
 import org.klay.examples.convolution.CIFARClassifier
+import org.klay.examples.recurrent.MemorizeSequence
 import org.klay.nn.*
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.*
@@ -18,6 +19,7 @@ import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.nd4j.linalg.schedule.MapSchedule
 import org.nd4j.linalg.schedule.ScheduleType
+import java.util.ArrayList
 
 
 class ExampleTests {
@@ -1006,6 +1008,74 @@ class ExampleTests {
                     activation(Activation.SOFTMAX)
                 }
                 inputType = InputType.convolutionalFlat(28, 28, 1)
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun memorizeSequenceExample() {
+        val LEARNSTRING = "*Der Cottbuser Postkutscher putzt den Cottbuser Postkutschkasten.".toCharArray()
+        val LEARNSTRING_CHARS_LIST: MutableList<Char> = ArrayList()
+        val LEARNSTRING_CHARS = LinkedHashSet<Char>()
+        for (c in LEARNSTRING) LEARNSTRING_CHARS.add(c)
+        LEARNSTRING_CHARS_LIST.addAll(LEARNSTRING_CHARS)
+
+        val HIDDEN_LAYER_WIDTH = 50
+        val HIDDEN_LAYER_CONT = 2
+
+        val builder = NeuralNetConfiguration.Builder()
+        builder.seed(123)
+        builder.biasInit(0.0)
+        builder.miniBatch(false)
+        builder.updater(RmsProp(0.001))
+        builder.weightInit(WeightInit.XAVIER)
+        val listBuilder = builder.list()
+
+        // first difference, for rnns we need to use LSTM.Builder
+        for (i in 0 until HIDDEN_LAYER_CONT) {
+            val hiddenLayerBuilder = LSTM.Builder()
+            hiddenLayerBuilder.nIn(if (i == 0) LEARNSTRING_CHARS.size else HIDDEN_LAYER_WIDTH)
+            hiddenLayerBuilder.nOut(HIDDEN_LAYER_WIDTH)
+            // adopted activation function from LSTMCharModellingExample
+            // seems to work well with RNNs
+            hiddenLayerBuilder.activation(Activation.TANH)
+            listBuilder.layer(i, hiddenLayerBuilder.build())
+        }
+
+        // we need to use RnnOutputLayer for our RNN
+        val outputLayerBuilder = RnnOutputLayer.Builder(LossFunction.MCXENT)
+        // softmax normalizes the output neurons, the sum of all outputs is 1
+        // this is required for our sampleFromDistribution-function
+        outputLayerBuilder.activation(Activation.SOFTMAX)
+        outputLayerBuilder.nIn(HIDDEN_LAYER_WIDTH)
+        outputLayerBuilder.nOut(LEARNSTRING_CHARS.size)
+        listBuilder.layer(HIDDEN_LAYER_CONT, outputLayerBuilder.build())
+
+        // create network
+        val dl4jNet = listBuilder.build()
+
+        val klayNet = sequential {
+            seed(123)
+            biasInit(0.0)
+            miniBatch(false)
+            updater(RmsProp(0.001))
+            weightInit(WeightInit.XAVIER)
+            layers {
+                for (i in 0 until HIDDEN_LAYER_CONT) {
+                    lstm {
+                        nIn(if (i == 0) LEARNSTRING_CHARS.size else HIDDEN_LAYER_WIDTH)
+                        nOut(HIDDEN_LAYER_WIDTH)
+                        activation(Activation.TANH)
+                    }
+                }
+                rnnOutput {
+                    lossFunction(LossFunction.MCXENT)
+                    activation(Activation.SOFTMAX)
+                    nIn(HIDDEN_LAYER_WIDTH)
+                    nOut(LEARNSTRING_CHARS.size)
+                }
             }
         }
 
