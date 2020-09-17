@@ -85,6 +85,61 @@ class LayerTests {
     }
 
     @Test
+    fun testLstmLayer() {
+        val builder = NeuralNetConfiguration.Builder()
+        builder.seed(123)
+        builder.biasInit(0.0)
+        builder.miniBatch(false)
+        builder.updater(RmsProp(0.001))
+        builder.weightInit(WeightInit.XAVIER)
+        val listBuilder = builder.list()
+
+        // first difference, for rnns we need to use LSTM.Builder
+        val hiddenLayerBuilder = LSTM.Builder()
+        hiddenLayerBuilder.nIn(16)
+        hiddenLayerBuilder.nOut(32)
+        // adopted activation function from LSTMCharModellingExample
+        // seems to work well with RNNs
+        hiddenLayerBuilder.activation(Activation.TANH)
+        listBuilder.layer(0, hiddenLayerBuilder.build())
+
+        // we need to use RnnOutputLayer for our RNN
+        val outputLayerBuilder = RnnOutputLayer.Builder(LossFunction.MCXENT)
+        // softmax normalizes the output neurons, the sum of all outputs is 1
+        // this is required for our sampleFromDistribution-function
+        outputLayerBuilder.activation(Activation.SOFTMAX)
+        outputLayerBuilder.nIn(32)
+        outputLayerBuilder.nOut(128)
+        listBuilder.layer(1, outputLayerBuilder.build())
+
+        // create network
+        val dl4jNet = listBuilder.build()
+
+        val klayNet = sequential {
+            seed(123)
+            biasInit(0.0)
+            miniBatch(false)
+            updater(RmsProp(0.001))
+            weightInit(WeightInit.XAVIER)
+            layers {
+                lstm {
+                    nIn(16)
+                    nOut(32)
+                    activation(Activation.TANH)
+                }
+                rnnOutput {
+                    lossFunction(LossFunction.MCXENT)
+                    activation(Activation.SOFTMAX)
+                    nIn(32)
+                    nOut(128)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
     fun testConv2dLayer() {
         val dl4jNet = NeuralNetConfiguration.Builder()
                 .seed(42)

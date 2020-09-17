@@ -28,10 +28,18 @@ fun NeuralNetConfiguration.ListBuilder.subsampling(init: SubsamplingLayer.Builde
     this.layer(SubsamplingLayer.Builder().apply(init).build())
 }
 
+fun NeuralNetConfiguration.ListBuilder.lstm(init: LSTM.Builder.() -> Unit) {
+    this.layer(LSTM.Builder().apply(init).build())
+}
+
 fun NeuralNetConfiguration.ListBuilder.output(init: OutputLayer.Builder.() -> Unit) {
     this.layer(OutputLayer.Builder().apply(init).build())
 }
 
 fun NeuralNetConfiguration.ListBuilder.centerLossOutput(init: CenterLossOutputLayer.Builder.() -> Unit) {
     this.layer(CenterLossOutputLayer.Builder().apply(init).build())
+}
+
+fun NeuralNetConfiguration.ListBuilder.rnnOutput(init: RnnOutputLayer.Builder.() -> Unit) {
+    this.layer(RnnOutputLayer.Builder().apply(init).build())
 }
