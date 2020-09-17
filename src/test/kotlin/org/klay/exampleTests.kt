@@ -8,6 +8,8 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.preprocessor.FeedForwardToRnnPreProcessor
+import org.deeplearning4j.nn.conf.preprocessor.RnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
 import org.klay.examples.convolution.CIFARClassifier
@@ -1076,6 +1078,51 @@ class ExampleTests {
                     nIn(HIDDEN_LAYER_WIDTH)
                     nOut(LEARNSTRING_CHARS.size)
                 }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun rnnEmbeddingExample() {
+        val nClassesIn = 10
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(123)
+            .activation(Activation.RELU)
+            .list()
+            .layer(EmbeddingLayer.Builder().nIn(nClassesIn).nOut(5).build())
+            .layer(LSTM.Builder().nIn(5).nOut(7).activation(Activation.TANH).build())
+            .layer(
+                RnnOutputLayer.Builder(LossFunction.MCXENT).nIn(7).nOut(4).activation(Activation.SOFTMAX)
+                    .build()
+            )
+            .inputPreProcessor(0, RnnToFeedForwardPreProcessor())
+            .inputPreProcessor(1, FeedForwardToRnnPreProcessor())
+            .build()
+
+        val klayNet = sequential {
+            seed(123)
+            activation(Activation.RELU)
+            layers {
+                embedding {
+                    nIn(nClassesIn)
+                    nOut(5)
+                }
+                lstm {
+                    nIn(5)
+                    nOut(7)
+                    activation(Activation.TANH)
+                }
+                rnnOutput {
+                    lossFunction(LossFunction.MCXENT)
+                    nIn(7)
+                    nOut(4)
+                    activation(Activation.SOFTMAX)
+                }
+                inputPreProcessor(0, RnnToFeedForwardPreProcessor())
+                inputPreProcessor(1, FeedForwardToRnnPreProcessor())
             }
         }
 

@@ -28,6 +28,10 @@ fun NeuralNetConfiguration.ListBuilder.subsampling(init: SubsamplingLayer.Builde
     this.layer(SubsamplingLayer.Builder().apply(init).build())
 }
 
+fun NeuralNetConfiguration.ListBuilder.embedding(init: EmbeddingLayer.Builder.() -> Unit) {
+    this.layer(EmbeddingLayer.Builder().apply(init).build())
+}
+
 fun NeuralNetConfiguration.ListBuilder.lstm(init: LSTM.Builder.() -> Unit) {
     this.layer(LSTM.Builder().apply(init).build())
 }
