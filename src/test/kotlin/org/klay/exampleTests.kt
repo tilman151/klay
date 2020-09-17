@@ -785,11 +785,111 @@ class ExampleTests {
                 }
                 centerLossOutput {
                     lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
-                    nIn(2).nOut(outputNum)
+                    nOut(outputNum)
                     weightInit(WeightInit.XAVIER)
                     activation(Activation.SOFTMAX) //Alpha and lambda hyperparameters are specific to center loss model: see comments above and paper
                     alpha(alpha)
                     lambda(lambda)
+                }
+                inputType = InputType.convolutionalFlat(28, 28, 1)
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun leNetMNISTExample() {
+        val nChannels = 1
+        val outputNum = 10
+        val seed = 123
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed.toLong())
+            .l2(0.0005)
+            .weightInit(WeightInit.XAVIER)
+            .updater(Adam(1e-3))
+            .list()
+            .layer(
+                ConvolutionLayer.Builder(
+                    5,
+                    5
+                ) //nIn and nOut specify depth. nIn here is the nChannels and nOut is the number of filters to be applied
+                    .nIn(nChannels)
+                    .stride(1, 1)
+                    .nOut(20)
+                    .activation(Activation.IDENTITY)
+                    .build()
+            )
+            .layer(
+                SubsamplingLayer.Builder(PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build()
+            )
+            .layer(
+                ConvolutionLayer.Builder(5, 5) //Note that nIn need not be specified in later layers
+                    .stride(1, 1)
+                    .nOut(50)
+                    .activation(Activation.IDENTITY)
+                    .build()
+            )
+            .layer(
+                SubsamplingLayer.Builder(PoolingType.MAX)
+                    .kernelSize(2, 2)
+                    .stride(2, 2)
+                    .build()
+            )
+            .layer(
+                DenseLayer.Builder().activation(Activation.RELU)
+                    .nOut(500).build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .nOut(outputNum)
+                    .activation(Activation.SOFTMAX)
+                    .build()
+            )
+            .setInputType(InputType.convolutionalFlat(28, 28, 1)) //See note below
+            .build()
+
+        val klayNet = sequential {
+            seed(seed.toLong())
+            l2(0.0005)
+            weightInit(WeightInit.XAVIER)
+            updater(Adam(1e-3))
+            layers {
+                conv2d {
+                    activation(Activation.IDENTITY)
+                    kernelSize(5, 5)
+                    stride(1, 1)
+                    nIn(nChannels)
+                    nOut(20)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                }
+                conv2d {
+                    activation(Activation.IDENTITY)
+                    kernelSize(5, 5)
+                    stride(1, 1)
+                    nOut(50)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                }
+                dense {
+                    activation(Activation.RELU)
+                    nOut(500)
+                }
+                output {
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    nOut(outputNum)
+                    activation(Activation.SOFTMAX)
                 }
                 inputType = InputType.convolutionalFlat(28, 28, 1)
             }
