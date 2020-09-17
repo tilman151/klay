@@ -3,6 +3,7 @@ package org.klay
 import junit.framework.TestCase.assertEquals
 import org.datavec.image.loader.CifarLoader
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
+import org.deeplearning4j.nn.conf.GradientNormalization
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
@@ -19,6 +20,7 @@ import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.*
 import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
+import org.nd4j.linalg.lossfunctions.impl.LossMCXENT
 import org.nd4j.linalg.schedule.MapSchedule
 import org.nd4j.linalg.schedule.ScheduleType
 import java.util.ArrayList
@@ -1123,6 +1125,48 @@ class ExampleTests {
                 }
                 inputPreProcessor(0, RnnToFeedForwardPreProcessor())
                 inputPreProcessor(1, FeedForwardToRnnPreProcessor())
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun uciSequenceClassificationExample() {
+        val numLabelClasses = 7
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(123) //Random number generator seed for improved repeatability. Optional.
+            .weightInit(WeightInit.XAVIER)
+            .updater(Nadam())
+            .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue) //Not always required, but helps with this data set
+            .gradientNormalizationThreshold(0.5)
+            .list()
+            .layer(LSTM.Builder().activation(Activation.TANH).nIn(1).nOut(10).build())
+            .layer(
+                RnnOutputLayer.Builder(LossFunction.MCXENT)
+                    .activation(Activation.SOFTMAX).nIn(10).nOut(numLabelClasses).build()
+            )
+            .build()
+
+        val klayNet = sequential {
+            seed(123) //Random number generator seed for improved repeatability. Optional.
+            weightInit(WeightInit.XAVIER)
+            updater(Nadam())
+            gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+            gradientNormalizationThreshold(0.5)
+            layers {
+                lstm {
+                    activation(Activation.TANH)
+                    nIn(1)
+                    nOut(10)
+                }
+                rnnOutput {
+                    lossFunction(LossFunction.MCXENT)
+                    activation(Activation.SOFTMAX)
+                    nIn(10)
+                    nOut(numLabelClasses)
+                }
             }
         }
 
