@@ -3,19 +3,24 @@ package org.klay
 import junit.framework.TestCase.assertEquals
 import org.datavec.image.loader.CifarLoader
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
+import org.deeplearning4j.nn.conf.BackpropType
 import org.deeplearning4j.nn.conf.GradientNormalization
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.preprocessor.CnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.conf.preprocessor.FeedForwardToRnnPreProcessor
+import org.deeplearning4j.nn.conf.preprocessor.RnnToCnnPreProcessor
 import org.deeplearning4j.nn.conf.preprocessor.RnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
+import org.klay.examples.recurrent.VideoFrameClassifier
 import org.klay.nn.*
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.*
+import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.nd4j.linalg.schedule.MapSchedule
 import org.nd4j.linalg.schedule.ScheduleType
@@ -1163,6 +1168,145 @@ class ExampleTests {
                     nIn(10)
                     nOut(numLabelClasses)
                 }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun videoFrameClassifier() {
+        val V_WIDTH = 130
+        val V_HEIGHT = 130
+        val V_NFRAMES = 150
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(12345)
+            .l2(0.001) //l2 regularization on all layers
+            .updater(AdaGrad(0.04))
+            .list()
+            .layer(
+                ConvolutionLayer.Builder(10, 10)
+                    .nIn(3) //3 channels: RGB
+                    .nOut(30)
+                    .stride(4, 4)
+                    .activation(Activation.RELU)
+                    .weightInit(WeightInit.RELU)
+                    .build()
+            ) //Output: (130-10+0)/4+1 = 31 -> 31*31*30
+            .layer(
+                SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
+                    .kernelSize(3, 3)
+                    .stride(2, 2).build()
+            ) //(31-3+0)/2+1 = 15
+            .layer(
+                ConvolutionLayer.Builder(3, 3)
+                    .nIn(30)
+                    .nOut(10)
+                    .stride(2, 2)
+                    .activation(Activation.RELU)
+                    .weightInit(WeightInit.RELU)
+                    .build()
+            ) //Output: (15-3+0)/2+1 = 7 -> 7*7*10 = 490
+            .layer(
+                DenseLayer.Builder()
+                    .activation(Activation.RELU)
+                    .nIn(490)
+                    .nOut(50)
+                    .weightInit(WeightInit.RELU)
+                    .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                    .gradientNormalizationThreshold(10.0)
+                    .updater(AdaGrad(0.01))
+                    .build()
+            )
+            .layer(
+                LSTM.Builder()
+                    .activation(Activation.TANH)
+                    .nIn(50)
+                    .nOut(50)
+                    .weightInit(WeightInit.XAVIER)
+                    .updater(AdaGrad(0.008))
+                    .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                    .gradientNormalizationThreshold(10.0)
+                    .build()
+            )
+            .layer(
+                RnnOutputLayer.Builder(LossFunction.MCXENT)
+                    .activation(Activation.SOFTMAX)
+                    .nIn(50)
+                    .nOut(4) //4 possible shapes: circle, square, arc, line
+                    .weightInit(WeightInit.XAVIER)
+                    .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                    .gradientNormalizationThreshold(10.0)
+                    .build()
+            )
+            .inputPreProcessor(0, RnnToCnnPreProcessor(V_HEIGHT, V_WIDTH, 3))
+            .inputPreProcessor(3, CnnToFeedForwardPreProcessor(7, 7, 10))
+            .inputPreProcessor(4, FeedForwardToRnnPreProcessor())
+            .backpropType(BackpropType.TruncatedBPTT)
+            .tBPTTForwardLength(V_NFRAMES / 5)
+            .tBPTTBackwardLength(V_NFRAMES / 5)
+            .build()
+
+        val klayNet = sequential {
+            seed(12345)
+            l2(0.001) //l2 regularization on all layers
+            updater(AdaGrad(0.04))
+            layers {
+                conv2d {
+                    kernelSize(10, 10)
+                    nIn(3)
+                    nOut(30)
+                    stride(4, 4)
+                    activation(Activation.RELU)
+                    weightInit(WeightInit.RELU)
+                }
+                subsampling {
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                    kernelSize(3, 3)
+                    stride(2, 2)
+                }
+                conv2d {
+                    kernelSize(3, 3)
+                    nIn(30)
+                    nOut(10)
+                    stride(2, 2)
+                    activation(Activation.RELU)
+                    weightInit(WeightInit.RELU)
+                }
+                dense {
+                    activation(Activation.RELU)
+                    nIn(490)
+                    nOut(50)
+                    weightInit(WeightInit.RELU)
+                    gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                    gradientNormalizationThreshold(10.0)
+                    updater(AdaGrad(0.01))
+                }
+                lstm {
+                    activation(Activation.TANH)
+                    nIn(50)
+                    nOut(50)
+                    weightInit(WeightInit.XAVIER)
+                    updater(AdaGrad(0.008))
+                    gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                    gradientNormalizationThreshold(10.0)
+                }
+                rnnOutput {
+                    lossFunction(LossFunction.MCXENT)
+                    activation(Activation.SOFTMAX)
+                    nIn(50)
+                    nOut(4) //4 possible shapes: circle, square, arc, line
+                    weightInit(WeightInit.XAVIER)
+                    gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                    gradientNormalizationThreshold(10.0)
+                }
+                inputPreProcessor(0, RnnToCnnPreProcessor(V_HEIGHT, V_WIDTH, 3))
+                inputPreProcessor(3, CnnToFeedForwardPreProcessor(7, 7, 10))
+                inputPreProcessor(4, FeedForwardToRnnPreProcessor())
+                backpropType(BackpropType.TruncatedBPTT)
+                tBPTTForwardLength(V_NFRAMES / 5)
+                tBPTTBackwardLength(V_NFRAMES / 5)
             }
         }
 
