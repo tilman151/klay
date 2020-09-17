@@ -13,14 +13,10 @@ import org.deeplearning4j.nn.conf.preprocessor.FeedForwardToRnnPreProcessor
 import org.deeplearning4j.nn.conf.preprocessor.RnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
-import org.klay.examples.convolution.CIFARClassifier
-import org.klay.examples.recurrent.MemorizeSequence
 import org.klay.nn.*
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.*
-import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
-import org.nd4j.linalg.lossfunctions.impl.LossMCXENT
 import org.nd4j.linalg.schedule.MapSchedule
 import org.nd4j.linalg.schedule.ScheduleType
 import java.util.ArrayList
