@@ -49,6 +49,42 @@ class LayerTests {
     }
 
     @Test
+    fun testCenterLossOutputLayer() {
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(42)
+            .updater(Adam())
+            .list()
+            .layer(DenseLayer.Builder()
+                .nIn(10)
+                .nOut(100)
+                .activation(Activation.RELU)
+                .build())
+            .layer(CenterLossOutputLayer.Builder()
+                .nOut(2)
+                .activation(Activation.SOFTMAX)
+                .build())
+            .build()
+
+        val klayNet = sequential {
+            seed(42)
+            updater(Adam())
+            layers {
+                dense {
+                    nIn(10)
+                    nOut(100)
+                    activation(Activation.RELU)
+                }
+                centerLossOutput {
+                    nOut(2)
+                    activation(Activation.SOFTMAX)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
     fun testConv2dLayer() {
         val dl4jNet = NeuralNetConfiguration.Builder()
                 .seed(42)

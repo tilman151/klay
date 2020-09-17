@@ -31,3 +31,7 @@ fun NeuralNetConfiguration.ListBuilder.subsampling(init: SubsamplingLayer.Builde
 fun NeuralNetConfiguration.ListBuilder.output(init: OutputLayer.Builder.() -> Unit) {
     this.layer(OutputLayer.Builder().apply(init).build())
 }
+
+fun NeuralNetConfiguration.ListBuilder.centerLossOutput(init: CenterLossOutputLayer.Builder.() -> Unit) {
+    this.layer(CenterLossOutputLayer.Builder().apply(init).build())
+}
