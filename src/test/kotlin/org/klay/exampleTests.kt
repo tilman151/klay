@@ -1,22 +1,20 @@
 package org.klay
 
 import junit.framework.TestCase.assertEquals
+import org.datavec.image.loader.CifarLoader
+import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
-import org.deeplearning4j.nn.conf.layers.DenseLayer
-import org.deeplearning4j.nn.conf.layers.OutputLayer
+import org.deeplearning4j.nn.conf.inputs.InputType
+import org.deeplearning4j.nn.conf.layers.*
 import org.deeplearning4j.nn.weights.WeightInit
 import org.junit.Test
-import org.klay.nn.dense
-import org.klay.nn.layers
-import org.klay.nn.output
-import org.klay.nn.sequential
+import org.klay.examples.convolution.CIFARClassifier
+import org.klay.nn.*
 import org.nd4j.linalg.activations.Activation
-import org.nd4j.linalg.learning.config.AdaGrad
-import org.nd4j.linalg.learning.config.Nadam
-import org.nd4j.linalg.learning.config.Nesterovs
-import org.nd4j.linalg.learning.config.Sgd
+import org.nd4j.linalg.learning.config.*
+import org.nd4j.linalg.lossfunctions.LossFunctions
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
 
@@ -529,6 +527,184 @@ class ExampleTests {
             }
         }
 
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun cifarClassifierExample() {
+        val height = 32
+        val width = 32
+        val channels = 3
+        val numLabels = CifarLoader.NUM_LABELS
+        val seed = 123L
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+            .seed(seed)
+            .updater(AdaDelta())
+            .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+            .weightInit(WeightInit.XAVIER)
+            .list()
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(3, 3).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nIn(channels).nOut(32).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                SubsamplingLayer.Builder().kernelSize(2, 2).stride(2, 2)
+                    .poolingType(SubsamplingLayer.PoolingType.MAX).build()
+            )
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(1, 1).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nOut(16).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(3, 3).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nOut(64).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                SubsamplingLayer.Builder().kernelSize(2, 2).stride(2, 2)
+                    .poolingType(SubsamplingLayer.PoolingType.MAX).build()
+            )
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(1, 1).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nOut(32).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(3, 3).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nOut(128).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(1, 1).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nOut(64).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                ConvolutionLayer.Builder().kernelSize(1, 1).stride(1, 1).padding(1, 1)
+                    .activation(Activation.LEAKYRELU)
+                    .nOut(numLabels).build()
+            )
+            .layer(BatchNormalization())
+            .layer(
+                SubsamplingLayer.Builder().kernelSize(2, 2).stride(2, 2)
+                    .poolingType(SubsamplingLayer.PoolingType.AVG).build()
+            )
+            .layer(
+                OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .name("output")
+                    .nOut(numLabels)
+                    .dropOut(0.8)
+                    .activation(Activation.SOFTMAX)
+                    .build()
+            )
+            .setInputType(InputType.convolutional(height.toLong(), width.toLong(), channels.toLong()))
+            .build()
+
+        val klayNet = sequential {
+            seed(seed)
+            updater(AdaDelta())
+            optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+            weightInit(WeightInit.XAVIER)
+            activation(Activation.LEAKYRELU)
+            layers {
+                conv2d {
+                    kernelSize(3, 3)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nIn(channels)
+                    nOut(32)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                subsampling {
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                }
+                conv2d {
+                    kernelSize(1, 1)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nOut(16)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                conv2d {
+                    kernelSize(3, 3)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nOut(64)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                subsampling {
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                    poolingType(SubsamplingLayer.PoolingType.MAX)
+                }
+                conv2d {
+                    kernelSize(1, 1)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nOut(32)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                conv2d {
+                    kernelSize(3, 3)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nOut(128)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                conv2d {
+                    kernelSize(1, 1)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nOut(64)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                conv2d {
+                    kernelSize(1, 1)
+                    stride(1, 1)
+                    padding(1, 1)
+                    nOut(numLabels)
+                }
+                batchNorm {
+                    activation(Activation.SIGMOID)
+                }
+                subsampling {
+                    kernelSize(2, 2)
+                    stride(2, 2)
+                    poolingType(SubsamplingLayer.PoolingType.AVG)
+                }
+                output {
+                    name("output")
+                    nOut(numLabels)
+                    dropOut(0.8)
+                    activation(Activation.SOFTMAX)
+                    lossFunction(LossFunction.NEGATIVELOGLIKELIHOOD)
+                }
+                inputType = InputType.convolutional(height.toLong(), width.toLong(), channels.toLong())
+            }
+        }
         assertNetsEquals(dl4jNet, klayNet)
     }
 
