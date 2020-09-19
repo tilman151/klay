@@ -5,7 +5,6 @@ package org.klay.examples.variationalautoencoder
 
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator
 import org.deeplearning4j.nn.api.Model
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.layers.variational.BernoulliReconstructionDistribution
 import org.deeplearning4j.nn.layers.variational.VariationalAutoencoder
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
@@ -14,9 +13,6 @@ import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr
 import org.deeplearning4j.optimize.api.BaseTrainingListener
 import org.klay.examples.utils.VAEPlotUtil.MNISTLatentSpaceVisualizer
 import org.klay.examples.utils.VAEPlotUtil.plotData
-import org.klay.nn.layers
-import org.klay.nn.sequential
-import org.klay.nn.vae
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.buffer.DataType
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -28,6 +24,7 @@ import org.nd4j.linalg.learning.config.RmsProp
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.*
+import org.klay.nn.*
 
 
 /**
