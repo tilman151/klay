@@ -10,6 +10,7 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.inputs.InputType
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.layers.variational.BernoulliReconstructionDistribution
 import org.deeplearning4j.nn.conf.preprocessor.CnnToFeedForwardPreProcessor
 import org.deeplearning4j.nn.conf.preprocessor.FeedForwardToRnnPreProcessor
 import org.deeplearning4j.nn.conf.preprocessor.RnnToCnnPreProcessor
@@ -1175,7 +1176,7 @@ class ExampleTests {
     }
 
     @Test
-    fun videoFrameClassifier() {
+    fun videoFrameClassifierExample() {
         val V_WIDTH = 130
         val V_HEIGHT = 130
         val V_NFRAMES = 150
@@ -1307,6 +1308,48 @@ class ExampleTests {
                 backpropType(BackpropType.TruncatedBPTT)
                 tBPTTForwardLength(V_NFRAMES / 5)
                 tBPTTBackwardLength(V_NFRAMES / 5)
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun vaeMNIST2dPlotExample() {
+        val rngSeed = 12345
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+                .seed(rngSeed.toLong())
+                .updater(RmsProp(1e-3))
+                .weightInit(WeightInit.XAVIER)
+                .l2(1e-4)
+                .list()
+                .layer(org.deeplearning4j.nn.conf.layers.variational.VariationalAutoencoder.Builder()
+                        .activation(Activation.LEAKYRELU)
+                        .encoderLayerSizes(256, 256)
+                        .decoderLayerSizes(256, 256)
+                        .pzxActivationFunction(Activation.IDENTITY)
+                        .reconstructionDistribution(BernoulliReconstructionDistribution(Activation.SIGMOID.activationFunction))
+                        .nIn(28 * 28)
+                        .nOut(2)
+                        .build())
+                .build()
+
+        val klayNet = sequential {
+            seed(rngSeed.toLong())
+            updater(RmsProp(1e-3))
+            weightInit(WeightInit.XAVIER)
+            l2(1e-4)
+            layers {
+                vae {
+                    activation(Activation.LEAKYRELU)
+                    encoderLayerSizes(256, 256)
+                    decoderLayerSizes(256, 256)
+                    pzxActivationFunction(Activation.IDENTITY)
+                    reconstructionDistribution(BernoulliReconstructionDistribution(Activation.SIGMOID.activationFunction))
+                    nIn(28 * 28)
+                    nOut(2)
+                }
             }
         }
 
