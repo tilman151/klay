@@ -2,7 +2,6 @@ package org.klay.nn
 
 import org.deeplearning4j.nn.conf.*
 import org.deeplearning4j.nn.conf.layers.*
-import org.deeplearning4j.nn.conf.layers.variational.VariationalAutoencoder
 
 
 fun sequential(init: NeuralNetConfiguration.Builder.() -> NeuralNetConfiguration.ListBuilder): MultiLayerConfiguration {
@@ -17,28 +16,8 @@ fun NeuralNetConfiguration.ListBuilder.dense(init: DenseLayer.Builder.() -> Unit
     this.layer(DenseLayer.Builder().apply(init).build())
 }
 
-fun NeuralNetConfiguration.ListBuilder.conv2d(init: ConvolutionLayer.Builder.() -> Unit) {
-    this.layer(ConvolutionLayer.Builder().apply(init).build())
-}
-
 fun NeuralNetConfiguration.ListBuilder.batchNorm(init: BatchNormalization.Builder.() -> Unit) {
     this.layer(BatchNormalization.Builder().apply(init).build())
-}
-
-fun NeuralNetConfiguration.ListBuilder.subsampling(init: SubsamplingLayer.Builder.() -> Unit) {
-    this.layer(SubsamplingLayer.Builder().apply(init).build())
-}
-
-fun NeuralNetConfiguration.ListBuilder.embedding(init: EmbeddingLayer.Builder.() -> Unit) {
-    this.layer(EmbeddingLayer.Builder().apply(init).build())
-}
-
-fun NeuralNetConfiguration.ListBuilder.lstm(init: LSTM.Builder.() -> Unit) {
-    this.layer(LSTM.Builder().apply(init).build())
-}
-
-fun NeuralNetConfiguration.ListBuilder.vae(init: VariationalAutoencoder.Builder.() -> Unit) {
-    this.layer(VariationalAutoencoder.Builder().apply(init).build())
 }
 
 fun NeuralNetConfiguration.ListBuilder.output(init: OutputLayer.Builder.() -> Unit) {
@@ -49,6 +28,3 @@ fun NeuralNetConfiguration.ListBuilder.centerLossOutput(init: CenterLossOutputLa
     this.layer(CenterLossOutputLayer.Builder().apply(init).build())
 }
 
-fun NeuralNetConfiguration.ListBuilder.rnnOutput(init: RnnOutputLayer.Builder.() -> Unit) {
-    this.layer(RnnOutputLayer.Builder().apply(init).build())
-}
