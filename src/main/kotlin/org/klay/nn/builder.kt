@@ -2,6 +2,7 @@ package org.klay.nn
 
 import org.deeplearning4j.nn.conf.*
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.layers.variational.VariationalAutoencoder
 
 
 fun sequential(init: NeuralNetConfiguration.Builder.() -> NeuralNetConfiguration.ListBuilder): MultiLayerConfiguration {
@@ -34,6 +35,10 @@ fun NeuralNetConfiguration.ListBuilder.embedding(init: EmbeddingLayer.Builder.()
 
 fun NeuralNetConfiguration.ListBuilder.lstm(init: LSTM.Builder.() -> Unit) {
     this.layer(LSTM.Builder().apply(init).build())
+}
+
+fun NeuralNetConfiguration.ListBuilder.vae(init: VariationalAutoencoder.Builder.() -> Unit) {
+    this.layer(VariationalAutoencoder.Builder().apply(init).build())
 }
 
 fun NeuralNetConfiguration.ListBuilder.output(init: OutputLayer.Builder.() -> Unit) {

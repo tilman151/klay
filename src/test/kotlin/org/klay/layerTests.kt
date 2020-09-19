@@ -4,6 +4,8 @@ import junit.framework.TestCase.*
 import org.junit.*
 import org.deeplearning4j.nn.conf.*
 import org.deeplearning4j.nn.conf.layers.*
+import org.deeplearning4j.nn.conf.layers.variational.BernoulliReconstructionDistribution
+import org.deeplearning4j.nn.conf.layers.variational.GaussianReconstructionDistribution
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.learning.config.*
 import org.deeplearning4j.nn.weights.WeightInit
@@ -259,6 +261,42 @@ class LayerTests {
                 output {
                     nOut(2)
                     activation(Activation.SOFTMAX)
+                }
+            }
+        }
+
+        assertNetsEquals(dl4jNet, klayNet)
+    }
+
+    @Test
+    fun testVaeLayer() {
+        val rngSeed = 12345
+
+        val dl4jNet = NeuralNetConfiguration.Builder()
+                .seed(rngSeed.toLong())
+                .list()
+                .layer(org.deeplearning4j.nn.conf.layers.variational.VariationalAutoencoder.Builder()
+                        .activation(Activation.LEAKYRELU)
+                        .encoderLayerSizes(256, 128)
+                        .decoderLayerSizes(128, 256)
+                        .pzxActivationFunction(Activation.SIGMOID)
+                        .reconstructionDistribution(GaussianReconstructionDistribution(Activation.SIGMOID.activationFunction))
+                        .nIn(28 * 28)
+                        .nOut(2)
+                        .build())
+                .build()
+
+        val klayNet = sequential {
+            seed(rngSeed.toLong())
+            layers {
+                vae {
+                    activation(Activation.LEAKYRELU)
+                    encoderLayerSizes(256, 128)
+                    decoderLayerSizes(128, 256)
+                    pzxActivationFunction(Activation.SIGMOID)
+                    reconstructionDistribution(GaussianReconstructionDistribution(Activation.SIGMOID.activationFunction))
+                    nIn(28 * 28)
+                    nOut(2)
                 }
             }
         }
