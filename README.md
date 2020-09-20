@@ -1,7 +1,7 @@
 # Klay - Clean DL4J Network Declarations
 
 This project, *Klay* (Kotlin LAYers), uses Kotlin to build a Domain-Specific Language (DSL) for defining neural networks in DL4J.
-It is accompanied by [this blog post]().
+It is accompanied by [this blog post](https://krokotsch.eu/cleancode/2020/09/20/Kotlin-DSL-for-DL4J.html).
 
 *Klay* uses type-safe builder functions to initialize layers of neural networks.
 Instead of writing this in standard DL4J syntax:
